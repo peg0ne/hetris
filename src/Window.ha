@@ -1,3 +1,4 @@
+get => dictionary
 get => IBlock
 
 class Window => HorizontalLayout
@@ -58,6 +59,34 @@ pub
         _size = Vector(COLS - (_offset.x * 2), LINES - (_offset.y * 2))
         ((HorizontalLayout*)this)->update()
     ;
+    fn check_clear =>
+        let offset = tetris_main.Offset()
+        let size = tetris_main.Size()
+        Dictionary<int, int> lines = Dictionary<int, int>()
+        foreach block in blocks
+            foreach internal in block.internal_blocks
+                select val from lines.try_get_value(block.pos.y + internal.y)
+                    lines.set(block.pos.y + internal.y, val+1)
+                    continue
+                ;
+                lines.add(block.pos.y + internal.y, 1)
+            ;
+        ;
+        vector<IBlock> kept_blocks = {}
+        foreach key in lines.keys()
+            select val from lines.try_get_value(key)
+                if val == size.x / 2
+                    for i until blocks.size()
+                        if blocks[i].pop(key - blocks[i].pos.y) do continue
+                        kept_blocks.push_back(blocks[i])
+                    ;
+                    blocks = kept_blocks
+                    kept_blocks = {}
+                ;
+            ;
+        ;
+        
+    ;
     fn check_collision Vector pos, bool is_down => bool
         let offset = tetris_main.Offset()
         let size = tetris_main.Size()
@@ -69,6 +98,7 @@ pub
             if x >= offset.x + size.x doremi true
             if y >= offset.y + size.y
                 blocks.push_back(random_block())
+                check_clear()
                 current = &blocks[blocks.size() - 1]
                 return true
             ;
@@ -85,6 +115,7 @@ pub
                     if i_y == c_y && i_x == c_x
                         if is_down
                             blocks.push_back(random_block())
+                            check_clear()
                             current = &blocks[blocks.size() - 1]
                         ;
                         return true
@@ -105,6 +136,13 @@ pub
         ;
         return false
     ;
+    fn rotate =>
+        let old_blocks = current->internal_blocks
+        current->rotate()
+        if check_collision(current->pos, false)
+            current->internal_blocks = old_blocks
+        ;
+    ;
     fn handle_key =>
         let key = n->key()
         if key == -1 do return
@@ -112,7 +150,7 @@ pub
         case KEY_LEFT dobr try_move(Vector(-2, 0))
         case KEY_RIGHT dobr try_move(Vector(2, 0))
         case KEY_DOWN dobr try_move(Vector(0, 1))
-        case KEY_UP dobr current->rotate()
+        case KEY_UP dobr rotate()
         case ' '
             while try_move(Vector(0, 1)) do continue
             break
@@ -143,5 +181,6 @@ pub
             ;
             n->col(block.color, false)
         ;
+        check_clear()
     ;
 ;
