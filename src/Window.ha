@@ -89,6 +89,7 @@ pub
             ;
         ;
         cleared_lines += cleared
+        if cleared_lines = level * 5 do level++
         switch cleared
         case 1 dobr score += 40 * (level + 1)
         case 2 dobr score += 100 * (level + 1)
