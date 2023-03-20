@@ -1,3 +1,4 @@
+inc => bits/stdc++.h
 get => dictionary
 get => IBlock
 
@@ -74,10 +75,13 @@ pub
         ;
         vector<IBlock> kept_blocks = {}
         int cleared = 0
+        let keys = lines.keys()
+        sort(keys.begin(), keys.end())
         foreach key in lines.keys()
             select val from lines.try_get_value(key)
                 if val == size.x / 2
                     for i until blocks.size()
+                        if i == blocks.size() - 1 dobr kept_blocks.push_back(blocks[i])
                         if blocks[i].pop(key - blocks[i].pos.y) do continue
                         kept_blocks.push_back(blocks[i])
                     ;
@@ -214,6 +218,5 @@ pub
             n->add(offset.y + (size.y / 2) + internal.y, offset.x + (size.x / 2) + (internal.x * 2) - 1, "  ")
         ;
         n->col(next.color, false)
-        check_clear()
     ;
 ;
