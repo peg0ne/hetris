@@ -34,6 +34,12 @@ struct IBlock
         ;
         return internal_blocks.size() == 0
     ;
+    fn move_down int y =>
+        foreach i,block in internal_blocks
+            if block.y >= y do continue
+            internal_blocks[i].y++
+        ;
+    ;
 ;
 
 fn T_Block => IBlock doremi IBlock(Vector(13,0), TCOLOR, true,{

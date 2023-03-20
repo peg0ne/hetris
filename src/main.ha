@@ -23,6 +23,7 @@ fn run Window *w, Ncurses *n =>
 fn main =>
     let n = Ncurses()
     init_pair(ICOLOR, COLOR_BLACK, COLOR_WHITE)
+    srand(time(NULL))
     n.start(true)
     let w = Window(&n)
     thread t(run, &w, &n)

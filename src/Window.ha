@@ -4,13 +4,16 @@ get => IBlock
 class Window => HorizontalLayout
     IContainer tetris_main = IContainer(Fill::Static, Vector(30,0))
     IContainer tetris_side = VerticalLayout(Fill::Static, Vector(20,0))
-    IContainer tetris_score = IContainer(Fill::Static, Vector(0, 5))
+    IContainer tetris_score = IContainer(Fill::Static, Vector(0, 7))
     IContainer tetris_next = IContainer(Fill::Static, Vector(0, 4))
     IContainer tetris_level = IContainer(Fill::Static, Vector(0, 2))
     Ncurses *n
 
     vector<IBlock> blocks = {}
     IBlock *current
+    IBlock next = random_block()
+    int level = 0
+    int cleared_lines = 0
     int score = 0
     int top_score = 0
     Window Ncurses *n =>
@@ -23,23 +26,21 @@ class Window => HorizontalLayout
         tetris_level.ToggleOutline()
 
         tetris_score.SetContent(List<string>({
-            "TOP",
+            "Top",
             $"{top_score}",
             "",
             "Score",
-            $"{score}"
-        }))
-        tetris_next.SetContent(List<string>({
-            "NEXT",
-            " o o o ",
-            "     o "
+            $"{score}",
+            "Lines",
+            $"{cleared_lines}"
         }))
         tetris_level.SetContent(List<string>({
-            "LEVEL",
-            "1"
+            "Level",
+            $"{level}"
         }))
+        tetris_next.SetContent(List<string>({"NEXT"}))
 
-        blocks.push_back(T_Block())
+        blocks.push_back(random_block())
         current = &blocks[0]
 
         add(new IContainer(Fill::Flex))
@@ -52,7 +53,6 @@ class Window => HorizontalLayout
         tetris_side.add(new IContainer(Fill::Static, Vector(0, 2)))
         tetris_side.add(&tetris_level)
         add(new IContainer(Fill::Flex))
-
     ;
 pub
     fn update =>
@@ -73,6 +73,7 @@ pub
             ;
         ;
         vector<IBlock> kept_blocks = {}
+        int cleared = 0
         foreach key in lines.keys()
             select val from lines.try_get_value(key)
                 if val == size.x / 2
@@ -80,12 +81,21 @@ pub
                         if blocks[i].pop(key - blocks[i].pos.y) do continue
                         kept_blocks.push_back(blocks[i])
                     ;
+                    cleared++
                     blocks = kept_blocks
+                    for i until blocks.size() do blocks[i].move_down(key - blocks[i].pos.y)
                     kept_blocks = {}
                 ;
             ;
         ;
-        
+        cleared_lines += cleared
+        switch cleared
+        case 1 dobr score += 40 * (level + 1)
+        case 2 dobr score += 100 * (level + 1)
+        case 3 dobr score += 300 * (level + 1)
+        case 4 dobr score += 1200 * (level + 1)
+        default do break
+        ;
     ;
     fn check_collision Vector pos, bool is_down => bool
         let offset = tetris_main.Offset()
@@ -97,7 +107,8 @@ pub
             if x < offset.x doremi true
             if x >= offset.x + size.x doremi true
             if y >= offset.y + size.y
-                blocks.push_back(random_block())
+                blocks.push_back(next)
+                next = random_block()
                 check_clear()
                 current = &blocks[blocks.size() - 1]
                 return true
@@ -114,7 +125,8 @@ pub
                     let c_x = origin.x + (current_internal.x * 2) -1
                     if i_y == c_y && i_x == c_x
                         if is_down
-                            blocks.push_back(random_block())
+                            blocks.push_back(next)
+                            next = random_block()
                             check_clear()
                             current = &blocks[blocks.size() - 1]
                         ;
@@ -162,6 +174,19 @@ pub
     ;
     fn draw =>
         n->clearScr()
+        tetris_score.SetContent(List<string>({
+            "Top",
+            $"{top_score}",
+            "",
+            "Score",
+            $"{score}",
+            "Lines",
+            $"{cleared_lines}"
+        }))
+        tetris_level.SetContent(List<string>({
+            "Level",
+            $"{level}"
+        }))
         update()
         ((IContainer*)this)->draw(n)
         foreach c in _containers do draw_container_impl(c,n)
@@ -181,6 +206,13 @@ pub
             ;
             n->col(block.color, false)
         ;
+        let offset = tetris_next.Offset()
+        let size = tetris_next.Size()
+        n->col(next.color)
+        foreach internal in next.internal_blocks
+            n->add(offset.y + (size.y / 2) + internal.y, offset.x + (size.x / 2) + (internal.x * 2) - 1, "  ")
+        ;
+        n->col(next.color, false)
         check_clear()
     ;
 ;
