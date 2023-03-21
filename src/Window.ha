@@ -8,6 +8,7 @@ class Window => HorizontalLayout
     IContainer tetris_score = IContainer(Fill::Static, Vector(0, 7))
     IContainer tetris_next = IContainer(Fill::Static, Vector(0, 4))
     IContainer tetris_level = IContainer(Fill::Static, Vector(0, 2))
+    IContainer popup = IContainer(Vector(30, 6), Vector(COLS / 2 - 15, LINES / 2 - 3))
     Ncurses *n
 
     vector<IBlock> blocks = {}
@@ -17,6 +18,9 @@ class Window => HorizontalLayout
     int cleared_lines = 0
     int score = 0
     int top_score = 0
+    bool pause = false
+    bool stop = false
+    bool is_game_over = false
     Window Ncurses *n =>
         this->n = n
         this->_offset = Vector(10,4)
@@ -25,6 +29,7 @@ class Window => HorizontalLayout
         tetris_score.ToggleOutline()
         tetris_next.ToggleOutline()
         tetris_level.ToggleOutline()
+        popup.SetActive(false)
 
         tetris_score.SetContent(List<string>({
             "Top",
@@ -62,6 +67,7 @@ pub
         ((HorizontalLayout*)this)->update()
     ;
     fn check_clear =>
+        stop = true
         let offset = tetris_main.Offset()
         let size = tetris_main.Size()
         Dictionary<int, int> lines = Dictionary<int, int>()
@@ -88,13 +94,16 @@ pub
                     ;
                     cleared++
                     blocks = kept_blocks
-                    for i until blocks.size() do blocks[i].move_down(key - blocks[i].pos.y)
+                    for i until blocks.size()
+                        if i == blocks.size() - 1 do continue
+                        blocks[i].move_down(key - blocks[i].pos.y)
+                    ;
                     kept_blocks = {}
                 ;
             ;
         ;
         cleared_lines += cleared
-        if cleared_lines == (level + 1) * 5 do level++
+        if cleared_lines >= (level + 1) * 10 do level++
         switch cleared
         case 1 dobr score += 40 * (level + 1)
         case 2 dobr score += 100 * (level + 1)
@@ -102,6 +111,7 @@ pub
         case 4 dobr score += 1200 * (level + 1)
         default do break
         ;
+        stop = false
     ;
     fn check_collision Vector pos, bool is_down => bool
         let offset = tetris_main.Offset()
@@ -131,6 +141,29 @@ pub
                     let c_x = origin.x + (current_internal.x * 2) -1
                     if i_y == c_y && i_x == c_x
                         if is_down
+                            foreach check_block in current->internal_blocks
+                                if origin.y + check_block.y < offset.y
+                                    let content = List<string>({
+                                        "          Game Over!",
+                                        "",
+                                        $"  Score: {score}",
+                                    })
+                                    if score > top_score 
+                                        content.add("  NEW HIGHSCORE!!!")
+                                        top_score = score
+                                        score = 0
+                                        cleared_lines = 0
+                                        level = 0
+                                    ;
+                                    content.add("")
+                                    content.add("  Press 'Enter' to continue:")
+                                    popup.SetContent(content)
+                                    popup.SetActive(true)
+                                    popup.ToggleOutline()
+                                    pause = true
+                                    is_game_over = true
+                                ;
+                            ;
                             blocks.push_back(next)
                             next = random_block()
                             check_clear()
@@ -143,18 +176,26 @@ pub
         ;
         return false
     ;
-    fn drop => do try_move(Vector(0,1))
+    fn drop =>
+        if pause || stop do return
+        try_move(Vector(0,1))
+    ;
     fn try_move Vector dir => bool
+        if pause || stop do return false
+        stop = true
         let pos = current->pos
         pos.x += dir.x
         pos.y += dir.y
         if !check_collision(pos, dir.y > 0)
             current->pos = pos
+            stop = false
             return true
         ;
+        stop = false
         return false
     ;
     fn rotate =>
+        if pause || stop do return
         let old_blocks = current->internal_blocks
         current->rotate()
         if check_collision(current->pos, false)
@@ -169,6 +210,26 @@ pub
         case KEY_RIGHT dobr try_move(Vector(2, 0))
         case KEY_DOWN dobr try_move(Vector(0, 1))
         case KEY_UP dobr rotate()
+        case '\n'
+            pause = !pause
+            popup.ToggleOutline()
+            popup.SetActive(pause)
+            if is_game_over
+                is_game_over = false
+                blocks.clear()
+                next = random_block()
+                blocks.push_back(next)
+                next = random_block()
+                current = &blocks[blocks.size() - 1]
+            ;
+            else
+                popup.SetContent(List<string>({
+                    "            Paused",
+                    " ",
+                    "  Press 'Enter' to continue:"
+                }))
+            ;
+            break
         case ' '
             while try_move(Vector(0, 1)) do continue
             break
@@ -219,5 +280,8 @@ pub
             n->add(offset.y + (size.y / 2) + internal.y, offset.x + (size.x / 2) + (internal.x * 2) - 1, "  ")
         ;
         n->col(next.color, false)
+        popup.SetOffset(COLS / 2 - 15, LINES / 2 - 3)
+        popup.draw(n)
+        popup.draw_outline(n)
     ;
 ;

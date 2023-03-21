@@ -7,7 +7,7 @@ struct IBlock
     IBlock Vector pos, short color, bool can_rotate, vector<Vector> internal_blocks =>
         this->pos = pos
         this->color = color
-        this->can_rotate
+        this->can_rotate = can_rotate
         this->internal_blocks = internal_blocks
     ;
     fn rotate =>
