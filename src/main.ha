@@ -28,7 +28,7 @@ fn main =>
     let w = Window(&n)
     thread t(run, &w, &n)
     loop
-        usleep(1000000)
+        usleep(min(1000000 - (5000 * w.get_level()), 500000))
         w.drop()
     ;
     t.join()

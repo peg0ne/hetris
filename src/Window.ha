@@ -56,6 +56,7 @@ class Window => HorizontalLayout
         add(new IContainer(Fill::Flex))
     ;
 pub
+    fn get_level => int doremi level
     fn update =>
         _size = Vector(COLS - (_offset.x * 2), LINES - (_offset.y * 2))
         ((HorizontalLayout*)this)->update()
@@ -93,7 +94,7 @@ pub
             ;
         ;
         cleared_lines += cleared
-        if cleared_lines = level * 5 do level++
+        if cleared_lines == (level + 1) * 5 do level++
         switch cleared
         case 1 dobr score += 40 * (level + 1)
         case 2 dobr score += 100 * (level + 1)
