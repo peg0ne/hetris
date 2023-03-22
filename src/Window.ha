@@ -1,6 +1,6 @@
 inc => bits/stdc++.h
 get => dictionary
-get => IBlock
+get => IBlock, TetrisHelpers
 
 class Window => HorizontalLayout
     IContainer tetris_main = IContainer(Fill::Static, Vector(30,0))
@@ -68,113 +68,56 @@ pub
     ;
     fn check_clear =>
         stop = true
-        let offset = tetris_main.Offset()
         let size = tetris_main.Size()
-        Dictionary<int, int> lines = Dictionary<int, int>()
-        foreach block in blocks
-            foreach internal in block.internal_blocks
-                select val from lines.try_get_value(block.pos.y + internal.y)
-                    lines.set(block.pos.y + internal.y, val+1)
-                    continue
-                ;
-                lines.add(block.pos.y + internal.y, 1)
-            ;
-        ;
-        vector<IBlock> kept_blocks = {}
-        int cleared = 0
-        let keys = lines.keys()
-        sort(keys.begin(), keys.end())
-        foreach key in lines.keys()
-            select val from lines.try_get_value(key)
-                if val == size.x / 2
-                    for i until blocks.size()
-                        if i == blocks.size() - 1 dobr kept_blocks.push_back(blocks[i])
-                        if blocks[i].pop(key - blocks[i].pos.y) do continue
-                        kept_blocks.push_back(blocks[i])
-                    ;
-                    cleared++
-                    blocks = kept_blocks
-                    for i until blocks.size()
-                        if i == blocks.size() - 1 do continue
-                        blocks[i].move_down(key - blocks[i].pos.y)
-                    ;
-                    kept_blocks = {}
-                ;
-            ;
-        ;
-        cleared_lines += cleared
-        if cleared_lines >= (level + 1) * 10 do level++
-        switch cleared
-        case 1 dobr score += 40 * (level + 1)
-        case 2 dobr score += 100 * (level + 1)
-        case 3 dobr score += 300 * (level + 1)
-        case 4 dobr score += 1200 * (level + 1)
-        default do break
-        ;
+        let lines = as_dict_line(blocks, size.x / 2)
+        let cleared = clear_lines(lines, blocks, size.x / 2)
+        cleared_lines += cleared.cleared
+        blocks = cleared.blocks
+        score += get_score(cleared.cleared, level)
+        if is_level_up(cleared_lines, level) do level++
         stop = false
     ;
     fn check_collision Vector pos, bool is_down => bool
-        let offset = tetris_main.Offset()
         let size = tetris_main.Size()
+        let offset = tetris_main.Offset()
         let origin = Vector(offset.x + pos.x, offset.y + pos.y)
-        foreach internal in current->internal_blocks
-            let y = origin.y + internal.y
-            let x = origin.x + (internal.x * 2) - 1
-            if x < offset.x doremi true
-            if x >= offset.x + size.x doremi true
-            if y >= offset.y + size.y
-                blocks.push_back(next)
-                next = random_block()
-                check_clear()
-                current = &blocks[blocks.size() - 1]
-                return true
-            ;
+        let out_of_bounds_set = check_out_of_bounds(size, offset, pos, current)
+        if out_of_bounds_set.b
+            blocks.push_back(next)
+            next = random_block()
+            check_clear()
+            current = &blocks[blocks.size() - 1]
         ;
-        foreach i,block in blocks
-            if i == blocks.size() - 1 do break
-            let i_origin = Vector(offset.x + block.pos.x, offset.y + block.pos.y)
-            foreach internal_block in block.internal_blocks
-                let i_y = i_origin.y + internal_block.y
-                let i_x = i_origin.x + (internal_block.x * 2) - 1
-                foreach current_internal in current->internal_blocks
-                    let c_y = origin.y + current_internal.y
-                    let c_x = origin.x + (current_internal.x * 2) -1
-                    if i_y == c_y && i_x == c_x
-                        if is_down
-                            foreach check_block in current->internal_blocks
-                                if origin.y + check_block.y < offset.y
-                                    let content = List<string>({
-                                        "          Game Over!",
-                                        "",
-                                        $"  Score: {score}",
-                                    })
-                                    if score > top_score 
-                                        content.add("  NEW HIGHSCORE!!!")
-                                        top_score = score
-                                        score = 0
-                                        cleared_lines = 0
-                                        level = 0
-                                    ;
-                                    content.add("")
-                                    content.add("  Press 'Enter' to continue:")
-                                    popup.SetContent(content)
-                                    popup.SetActive(true)
-                                    popup.ToggleOutline()
-                                    pause = true
-                                    is_game_over = true
-                                ;
-                            ;
-                            blocks.push_back(next)
-                            next = random_block()
-                            check_clear()
-                            current = &blocks[blocks.size() - 1]
-                        ;
-                        return true
-                    ;
-                ;
+        if out_of_bounds_set.a doremi true
+        let hit_individual = check_individual_collisions(blocks, offset, pos, current, is_down)
+        if hit_individual.b
+            let content = List<string>({
+                "          Game Over!",
+                "",
+                $"  Score: {score}",
+            })
+            if score > top_score 
+                content.add("  NEW HIGHSCORE!!!")
+                top_score = score
+                score = 0
+                cleared_lines = 0
+                level = 0
             ;
+            content.add("")
+            content.add("  Press 'Enter' to continue:")
+            popup.SetContent(content)
+            popup.SetActive(true)
+            popup.ToggleOutline()
+            pause = true
+            is_game_over = true
         ;
-        return false
+        if hit_individual.c
+            blocks.push_back(next)
+            next = random_block()
+            check_clear()
+            current = &blocks[blocks.size() - 1]
+        ;
+        return hit_individual.a
     ;
     fn drop =>
         if pause || stop do return
