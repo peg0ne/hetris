@@ -204,20 +204,29 @@ pub
         tetris_score.draw_outline(n)
         tetris_next.draw_outline(n)
         tetris_level.draw_outline(n)
-        foreach block in blocks
-            let offset = tetris_main.Offset()
+        let offset = tetris_main.Offset()
+        let size = tetris_main.Size()
+        foreach i,block in blocks
+            let is_current = i == blocks.size() - 1
             let origin = Vector(offset.x + block.pos.x, offset.y + block.pos.y)
             n->col(block.color)
             foreach internal in block.internal_blocks
                 let y = origin.y + internal.y
                 let x = origin.x + internal.x
+                if is_current && x >= offset.x
+                    n->col(PCOLOR)
+                    let p_pos = find_projection(blocks, current, offset, size)
+                    n->add(p_pos - 1 + internal.y, origin.x + (internal.x * 2) - 1, "  ")
+                    n->col(PCOLOR,false)
+                    n->col(block.color)
+                ;
                 if x < offset.x || y < offset.y do continue
                 n->add(origin.y + internal.y, origin.x + (internal.x * 2) - 1, "  ")
             ;
             n->col(block.color, false)
         ;
-        let offset = tetris_next.Offset()
-        let size = tetris_next.Size()
+        offset = tetris_next.Offset()
+        size = tetris_next.Size()
         n->col(next.color)
         foreach internal in next.internal_blocks
             n->add(offset.y + (size.y / 2) + internal.y, offset.x + (size.x / 2) + (internal.x * 2) - 1, "  ")

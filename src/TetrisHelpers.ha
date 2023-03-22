@@ -107,3 +107,21 @@ fn check_individual_collisions vector<IBlock> blocks, Vector offset, Vector pos,
     ;
     return Set(false, false, false)
 ;
+
+fn find_projection vector<IBlock> blocks, IBlock *block, Vector offset, Vector size => int
+    let origin = Vector(offset.x + block->pos.x, offset.y + block->pos.y)
+    let top = size.y + offset.y - 1
+    foreach i,b in blocks
+        if i == blocks.size() - 1 do break
+        let other_origin = Vector(offset.x + b.pos.x, offset.y + b.pos.y)
+        foreach internal_block in b.internal_blocks
+            let other_vec = Vector(other_origin.x + (internal_block.x * 2) - 1, other_origin.y + internal_block.y)
+            foreach current_internal_block in block->internal_blocks
+                let vec = Vector(origin.x + (current_internal_block.x * 2) - 1, origin.y + current_internal_block.y)
+                if vec.x != other_vec.x do continue
+                if top > other_vec.y - current_internal_block.y do top = other_vec.y - current_internal_block.y
+            ;
+        ;
+    ;
+    return top
+;
