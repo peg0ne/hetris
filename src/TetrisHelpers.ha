@@ -110,7 +110,12 @@ fn check_individual_collisions vector<IBlock> blocks, Vector offset, Vector pos,
 
 fn find_projection vector<IBlock> blocks, IBlock *block, Vector offset, Vector size => int
     let origin = Vector(offset.x + block->pos.x, offset.y + block->pos.y)
-    let top = size.y + offset.y - 1
+    let bound = size.y + offset.y
+    let top = bound
+    foreach current_internal_block in block->internal_blocks
+        let y = bound + current_internal_block.y
+        if y > bound do top = bound - current_internal_block.y
+    ;
     foreach i,b in blocks
         if i == blocks.size() - 1 do break
         let other_origin = Vector(offset.x + b.pos.x, offset.y + b.pos.y)
