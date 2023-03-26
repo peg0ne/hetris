@@ -1,4 +1,3 @@
-inc => bits/stdc++.h
 get => dictionary
 get => IBlock, TetrisHelpers
 
