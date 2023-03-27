@@ -1,3 +1,5 @@
+inc => algorithm
+
 fn as_dict_line vector<IBlock> blocks, int max_count => Dictionary<int, int>
     Dictionary<int, int> lines = Dictionary<int, int>()
     foreach block in blocks
