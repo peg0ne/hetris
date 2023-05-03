@@ -13,7 +13,7 @@ glob =>
     PCOLOR 14
 ;
 
-fn run Window *w, Ncurses *n =>
+fn run Window *w, =>
     loop
         w->draw()
         w->handle_key()
@@ -22,17 +22,17 @@ fn run Window *w, Ncurses *n =>
 ;
 
 fn main =>
-    let n = Ncurses()
+    Ncurses::init()
     init_pair(ICOLOR, COLOR_BLACK, COLOR_WHITE)
     init_pair(PCOLOR, COLOR_BLACK, 240)
     srand(time(NULL))
-    n.start(true)
-    let w = Window(&n)
-    thread t(run, &w, &n)
+    Ncurses::start(true)
+    let w = Window()
+    thread t(run, &w)
     loop
         usleep(max(1000000 - (100000 * w.get_level()), 50000))
         w.drop()
     ;
     t.join()
-    n.stop()
+    Ncurses::stop()
 ;

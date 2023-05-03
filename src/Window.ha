@@ -8,7 +8,6 @@ class Window => HorizontalLayout
     IContainer tetris_next = IContainer(Fill::Static, Vector(0, 4))
     IContainer tetris_level = IContainer(Fill::Static, Vector(0, 2))
     IContainer popup = IContainer(Vector(30, 6), Vector(COLS / 2 - 15, LINES / 2 - 3))
-    Ncurses *n
 
     vector<IBlock> blocks = {}
     IBlock *current
@@ -20,8 +19,7 @@ class Window => HorizontalLayout
     bool pause = false
     bool stop = false
     bool is_game_over = false
-    Window Ncurses *n =>
-        this->n = n
+    Window =>
         this->_offset = Vector(10,4)
 
         tetris_main.ToggleOutline()
@@ -145,7 +143,7 @@ pub
         ;
     ;
     fn handle_key =>
-        let key = n->key()
+        let key = Ncurses::key()
         if key == -1 do return
         switch key
         case KEY_LEFT dobr try_move(Vector(-2, 0))
@@ -176,13 +174,13 @@ pub
             while try_move(Vector(0, 1)) do continue
             break
         case 'q'
-            n->stop()
+            Ncurses::stop()
             exit(0)
             break
         ;
     ;
     fn draw =>
-        n->clearScr()
+        Ncurses::clearScr()
         tetris_score.SetContent(List<string>({
             "Top",
             $"{top_score}",
@@ -197,42 +195,42 @@ pub
             $"{level}"
         }))
         update()
-        ((IContainer*)this)->draw(n)
-        foreach c in _containers do draw_container_impl(c,n)
-        tetris_main.draw_outline(n)
-        tetris_score.draw_outline(n)
-        tetris_next.draw_outline(n)
-        tetris_level.draw_outline(n)
+        ((IContainer*)this)->draw()
+        foreach c in _containers do draw_container_impl(c)
+        tetris_main.draw_outline()
+        tetris_score.draw_outline()
+        tetris_next.draw_outline()
+        tetris_level.draw_outline()
         let offset = tetris_main.Offset()
         let size = tetris_main.Size()
         foreach i,block in blocks
             let is_current = i == blocks.size() - 1
             let origin = Vector(offset.x + block.pos.x, offset.y + block.pos.y)
-            n->col(block.color)
+            Ncurses::col(block.color)
             foreach internal in block.internal_blocks
                 let y = origin.y + internal.y
                 let x = origin.x + internal.x
                 if is_current && x >= offset.x
-                    n->col(PCOLOR)
+                    Ncurses::col(PCOLOR)
                     let p_pos = find_projection(blocks, current, offset, size)
-                    n->add(p_pos - 1 + internal.y, origin.x + (internal.x * 2) - 1, "  ")
-                    n->col(PCOLOR,false)
-                    n->col(block.color)
+                    Ncurses::add(p_pos - 1 + internal.y, origin.x + (internal.x * 2) - 1, "  ")
+                    Ncurses::col(PCOLOR,false)
+                    Ncurses::col(block.color)
                 ;
                 if x < offset.x || y < offset.y do continue
-                n->add(origin.y + internal.y, origin.x + (internal.x * 2) - 1, "  ")
+                Ncurses::add(origin.y + internal.y, origin.x + (internal.x * 2) - 1, "  ")
             ;
-            n->col(block.color, false)
+            Ncurses::col(block.color, false)
         ;
         offset = tetris_next.Offset()
         size = tetris_next.Size()
-        n->col(next.color)
+        Ncurses::col(next.color)
         foreach internal in next.internal_blocks
-            n->add(offset.y + (size.y / 2) + internal.y, offset.x + (size.x / 2) + (internal.x * 2) - 1, "  ")
+            Ncurses::add(offset.y + (size.y / 2) + internal.y, offset.x + (size.x / 2) + (internal.x * 2) - 1, "  ")
         ;
-        n->col(next.color, false)
+        Ncurses::col(next.color, false)
         popup.SetOffset(COLS / 2 - 15, LINES / 2 - 3)
-        popup.draw(n)
-        popup.draw_outline(n)
+        popup.draw()
+        popup.draw_outline()
     ;
 ;
