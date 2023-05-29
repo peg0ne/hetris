@@ -2,6 +2,8 @@
 
 A simple ncurses Tetris clone built in `halppp`
 
+![hetris png](image.png)
+
 ### Controls
 - Up -> Rotate
 - Space -> Drop 
