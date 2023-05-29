@@ -17,7 +17,7 @@ A simple ncurses Tetris clone built in `halppp`
 
 #### if you don't have the halppp compiler
 ```bash
-git clone https://github.com/peg0ne/halppp.git`
+git clone https://github.com/peg0ne/halppp.git
 # compile the compiler (It compiles itself three times)
 cd halppp/compiler && ./rebuild.sh
 cp main.ha $HOME/.local/bin/halppp
