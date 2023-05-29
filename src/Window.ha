@@ -2,8 +2,9 @@ get => dictionary
 get => IBlock, TetrisHelpers
 
 class Window => HorizontalLayout
-    IContainer tetris_main = IContainer(Fill::Static, Vector(30,0))
+    IContainer tetris_game = VerticalLayout(Fill::Static, Vector(30,0))
     IContainer tetris_side = VerticalLayout(Fill::Static, Vector(20,0))
+    IContainer tetris_main = IContainer(Fill::Static, Vector(0, 17))
     IContainer tetris_score = IContainer(Fill::Static, Vector(0, 7))
     IContainer tetris_next = IContainer(Fill::Static, Vector(0, 4))
     IContainer tetris_level = IContainer(Fill::Static, Vector(0, 2))
@@ -47,9 +48,10 @@ class Window => HorizontalLayout
         current = &blocks[0]
 
         add(new IContainer(Fill::Flex))
-        add(&tetris_main)
+        add(&tetris_game)
         add(new IContainer(Fill::Static, Vector(3, 0)))
         add(&tetris_side)
+        tetris_game.add(&tetris_main)
         tetris_side.add(&tetris_score)
         tetris_side.add(new IContainer(Fill::Static, Vector(0, 2)))
         tetris_side.add(&tetris_next)
